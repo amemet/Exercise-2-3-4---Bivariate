@@ -1,0 +1,52 @@
+---
+title: "Exercise 2 Bivariate"
+output: html_document
+---
+
+
+```{r heat chart1, echo=TRUE}
+link="https://github.com/EvansDataScience/data/raw/master/crime.RData"
+load(file = url(link))
+(CrimeTotal=table(crime$crimecat,crime$Occurred.DayTime))
+
+
+```
+```{r heat chart2, echo=TRUE}
+library(magrittr)
+(CrimeTotal=table(crime$crimecat,crime$Occurred.DayTime)%>% #create table and then...
+        prop.table() %>% #compute proportion and then...
+        "*"(100)%>% # multiply by 100 and then...
+        round(2) #...round to to decimals
+        )
+```
+
+```{r heat chart3, echo=TRUE}
+CrimeCol=table(crime$crimecat,crime$Occurred.DayTime)%>%
+         prop.table(margin = 2)%>%   # 2 is % by column
+         "*"(100)%>%
+         round(3)
+
+CrimeCol
+
+```
+```{r heat chart5, echo=TRUE}
+df.C=as.data.frame(CrimeCol)
+colnames(df.C)=c('Crime','Daytime','Percent')
+```
+
+
+```{r heat chart6, echo=TRUE}
+library(ggplot2)
+titleText='Crimes committed in Seattle depending on daytime'
+sourceText='Source: Seattle Police'
+base  = ggplot(df.C, aes(x = Daytime, y = reorder(Crime, -Percent), fill = Percent)) 
+heat1 = base +  geom_tile() 
+heat2 = heat1 +scale_fill_gradient(low = "yellow", 
+                                   high = "purple") + labs(title=titleText,
+                     x =NULL, 
+                     y = NULL,
+                     caption = sourceText)
+heat2
+```
+
+
