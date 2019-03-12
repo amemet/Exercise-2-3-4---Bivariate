@@ -1,5 +1,5 @@
 ---
-title: "Exercise 2 Bivariate"
+title: "Bivariate Exercise 2, 3, 4"
 output: html_document
 ---
 
@@ -49,4 +49,145 @@ heat2 = heat1 +scale_fill_gradient(low = "yellow",
 heat2
 ```
 
+
+
+```{r ex3-1, echo=TRUE}
+crimeY2000=crime[(crime$DaysToReport>=365) & (crime$year>=2000),]
+crimeY2000$YearsToReport=crimeY2000$DaysToReport/365
+crimeYearGG=crimeY2000[complete.cases(crimeY2000$YearsToReport),]
+```
+
+
+```{r ex3-3, echo=TRUE}
+titleText1='Minimum amount of years to report crimes'
+crimeYearGG=crimeY2000[complete.cases(crimeY2000$YearsToReport),]
+base  = ggplot(crimeYearGG,aes(x=factor(year), y=YearsToReport))
+mins = base + stat_summary(fun.y=min, # function for 'y' is min()
+                           geom="line",
+                           show.legend = T,size=1,
+                           aes(group=1,col='Min')) + labs(title=titleText1,
+                     x =NULL, 
+                     y = NULL,
+                     caption = sourceText)
+mins
+```
+
+```{r ex3-4, echo=TRUE}
+
+minsMaxs= mins + stat_summary(fun.y=max,
+                              geom="line",
+                              linetype='dashed',
+                              size=1,show.legend = F,
+                              aes(group=1,col='Maximum')) + labs(title="Minimum and maximum amount of years to report crimes",
+                     x =NULL, 
+                     y = NULL,
+                     caption = sourceText)
+
+minsMaxs
+```
+```{r ex3-5, echo=TRUE}
+
+minsMaxsMd= minsMaxs + stat_summary(fun.y=median,
+                                    geom="line",size=2,
+                                    aes(group=1,col='Median')) +scale_colour_manual(name="Trends",
+                                      values=c("blue", "black","red")
+                                      ) + labs(title="Minimum, maximum, and median amount of years to report crimes", subtitle = "starting form 2000",
+                     x =NULL, 
+                     y = NULL,
+                     caption = sourceText)
+minsMaxsMd
+```
+
+
+```{r ex3-6, echo=TRUE}
+crimeWeek=crime[(crime$DaysToReport<365) & (crime$year>=2000),]
+
+crimeWeek$WeeksToReport=crimeWeek$DaysToReport/7
+
+crimeYearGG2=crimeWeek[complete.cases(crimeWeek$WeeksToReport) &complete.cases(crimeWeek$crimecat),]
+base = ggplot(crimeYearGG2,aes(x=factor(year), y=WeeksToReport)) 
+mins = base + stat_summary(fun.y=min,size=1,
+                           geom="line", linetype='dashed',show.legend = T,
+                           aes(group=1,col='Min'))
+minsMaxs= mins + stat_summary(fun.y=max,
+                              geom="line",size=1,show.legend = F,
+                              aes(group=1,col='Max'))
+minsMaxsMd= minsMaxs + stat_summary(fun.y=median,
+                                    geom="line",size=2,
+                                    aes(group=1,col='Median'))
+all2=minsMaxsMd + scale_colour_manual(name="Trends",
+                                      values=c("blue", "black","red")
+                                      ) + labs(title="Minimum, maximum, and median amount of years to report crimes", subtitle = "starting form 2000",
+                     x =NULL, 
+                     y = NULL,
+                     caption = sourceText)
+all2 
+```
+```{r ex4-1, echo=TRUE}
+daysByNeigh=tapply(crime$DaysToReport, crime$Neighborhood, mean,na.rm=T)
+```
+
+```{r ex4-2, echo=TRUE}
+crimesByNeigh=tapply(crime$crimecat, crime$Neighborhood, length)%>%      
+                     prop.table()%>%
+                     "*"(100)%>% 
+                     round(2) 
+```
+
+```{r ex4-3, echo=TRUE}
+library(tibble)
+as.data.frame(daysByNeigh)%>%rownames_to_column()
+```
+
+```{r ex4-4, echo=TRUE}
+daysByNeigh=as.data.frame(daysByNeigh)%>%rownames_to_column()
+crimesByNeigh=as.data.frame(crimesByNeigh)%>%rownames_to_column()
+```
+
+```{r ex4-5, echo=TRUE}
+num_num=merge(daysByNeigh,crimesByNeigh) 
+head(num_num)
+```
+
+```{r ex4-6, echo=TRUE}
+base = ggplot(num_num, aes(daysByNeigh,crimesByNeigh)) 
+plot1= base +  geom_point() + labs(title="Crime shares and days to report by Seattle neighborhoods",
+                     x = "Days to report a crime" , 
+                     y = "Crime rate",
+                     caption = sourceText)
+plot1
+```
+```{r ex4-7, echo=TRUE}
+library(ggrepel)
+base = ggplot(num_num, aes(daysByNeigh,crimesByNeigh,
+                           label=rowname)) 
+plot1= base +  geom_point() 
+plot1 + geom_text_repel() + labs(title="Crime shares and days to report by Seattle neighborhoods",
+                     x = "Days to report a crime" , 
+                     y = "Crime rate",
+                     caption = sourceText)
+```
+
+```{r ex4-8, echo=TRUE}
+base = ggplot(num_num, aes(daysByNeigh,crimesByNeigh,label=rowname)) 
+plot1= base +  geom_point() 
+plot1 + geom_text_repel(aes(label=ifelse(crimesByNeigh>=5,
+                                         num_num$rowname, ""))) + labs(title="Crime shares and days to report by Seattle neighborhoods", subtitle = "Annoted are those represeneting at least 5% of the crimes in Seattle",
+                     x = "Days to report a crime" , 
+                     y = "Crime rate",
+                     caption = sourceText)
+```
+```{r ex4-9, echo=TRUE}
+ase = ggplot(num_num, aes(daysByNeigh,crimesByNeigh)) 
+scatp1 = base +  stat_density_2d(aes(fill = ..density..), 
+                                 geom = "raster", contour = FALSE)
+scatp2=scatp1+geom_text_repel(aes(label=ifelse(crimesByNeigh>=5,
+                                               num_num$rowname, "")))
+scatp3 = scatp2 +  theme(legend.position='none') 
+scatp4= scatp3 + scale_fill_distiller(palette="Reds", direction=1) + labs(title="Crime shares and days to report by Seattle neighborhoods", subtitle = "Annoted are those represeneting at least 5% of the crimes in Seattle",
+                     x = "Days to report a crime" , 
+                     y = "Crime rate",
+                     caption = sourceText)
+scatp4
+```
 
